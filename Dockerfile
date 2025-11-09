@@ -38,4 +38,5 @@ RUN npm install --prod
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+# Use a robust CMD for read-only filesystems
+CMD ["sh", "-c", "npm start"]
