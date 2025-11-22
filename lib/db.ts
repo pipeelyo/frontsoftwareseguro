@@ -22,7 +22,7 @@ async function dbConnect() {
     const opts = {
       bufferCommands: false,
     };
-    cachedConnection = await mongoose.connect(MONGO_URI, opts);
+    cachedConnection = await mongoose.connect(MONGO_URI!, opts);
     return cachedConnection;
   } catch (e) {
     throw e;
