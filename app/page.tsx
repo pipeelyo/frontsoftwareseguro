@@ -34,7 +34,7 @@ export default async function Home() {
   if (user) {
     return (
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">¡Bienvenido, {user.name}!</h1>
+        <h1 className="text-2xl font-bold text-gray-900">QUE GUSTO TENERTE DE VUELTA, {user.name}!</h1>
         <p className="mt-2 text-gray-600">Usa el menú de la izquierda para navegar.</p>
       </div>
     );
