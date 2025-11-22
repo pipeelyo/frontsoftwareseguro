@@ -120,7 +120,7 @@ const [documents, setDocuments] = useState<IDoc[]>([]);
                   {versions.sort((a: IDoc, b: IDoc) => b.version - a.version).map((doc: IDoc) => (
                     <li key={doc._id} className="flex justify-between items-center">
                       <span>Versión {doc.version} (subido por {doc.uploadedBy?.name || 'Desconocido'})</span>
-                      <a href={`/api/documents/${doc._id}`} download className="text-blue-500 hover:underline">Descargar</a>
+                      <a href={`/api/documents?id=${doc._id}`} download className="text-blue-500 hover:underline">Descargar</a>
                     </li>
                   ))}
                 </ul>
