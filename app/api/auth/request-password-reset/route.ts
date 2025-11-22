@@ -1,64 +1,56 @@
 import { NextResponse } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcrypt';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
-import VerificationToken from '@/models/VerificationToken';
+import { logAuditEvent } from '@/lib/audit';
 
-// In-memory store for rate limiting (in a real app, use Redis or a similar persistent store)
-const rateLimitStore: Record<string, { count: number; expiry: number }> = {};
-const RATE_LIMIT_COUNT = 3;
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+// Function to generate a random password
+function generateRandomPassword(length = 12) {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()';
+  let password = '';
+  for (let i = 0; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+}
 
 export async function POST(req: Request) {
-  const ip = req.headers.get('x-forwarded-for') ?? '127.0.0.1';
-
-  // Rate limiting logic
-  const now = Date.now();
-  const record = rateLimitStore[ip];
-  if (record && now < record.expiry) {
-    if (record.count >= RATE_LIMIT_COUNT) {
-      return NextResponse.json({ message: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' }, { status: 429 });
-    }
-    rateLimitStore[ip].count++;
-  } else {
-    rateLimitStore[ip] = { count: 1, expiry: now + RATE_LIMIT_WINDOW_MS };
-  }
-
   try {
     const { email } = await req.json();
-    const genericResponse = NextResponse.json({ message: 'Si tu cuenta existe, recibirás un correo con instrucciones para restablecer tu contraseña.' });
+    const genericResponse = NextResponse.json({ message: 'Si una cuenta con ese correo electrónico existe, se ha generado una nueva contraseña.' });
 
     await dbConnect();
     const user = await User.findOne({ email });
 
-    // Always return a generic response to prevent user enumeration
     if (!user) {
+      console.log(`Password reset requested for non-existent user: ${email}`);
       return genericResponse;
     }
 
-    // Generate a secure token
-    const token = uuidv4();
-    const hashedToken = await bcrypt.hash(token, 10);
-    const expires = new Date(new Date().getTime() + 15 * 60 * 1000); // 15 minutes
+    const newPassword = generateRandomPassword();
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    const verificationToken = new VerificationToken({
-      token: hashedToken,
-      expires,
-      type: 'PASSWORD_RESET',
+    user.password = hashedPassword;
+    user.tokenVersion += 1; // Invalidate old sessions
+    await user.save();
+
+    // Log the new password to the server console for the admin to see
+    console.log(`============================================================`);
+    console.log(`PASSWORD RESET`);
+    console.log(`User: ${user.email}`);
+    console.log(`New Password: ${newPassword}`);
+    console.log(`============================================================`);
+
+    logAuditEvent({
       userId: user._id,
+      action: 'PASSWORD_RESET_REQUEST',
+      ipAddress: req.headers.get('x-forwarded-for') ?? 'unknown',
     });
-    await verificationToken.save();
-
-    // Simulate sending email with the *unhashed* token
-    const resetLink = `http://localhost:3000/reset-password/${token}`;
-    console.log(`Password reset link for ${email}: ${resetLink}`);
 
     return genericResponse;
 
   } catch (error) {
     console.error('Password reset request error:', error);
-    // Still return a generic response in case of internal errors
-    return NextResponse.json({ message: 'Si tu cuenta existe, recibirás un correo con instrucciones para restablecer tu contraseña.' });
+    return NextResponse.json({ message: 'Error interno del servidor.' }, { status: 500 });
   }
 }

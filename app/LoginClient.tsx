@@ -50,7 +50,12 @@ export default function LoginClient({ initialUser }: LoginClientProps) {
           <input id="email" name="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
         </div>
         <div>
-          <label htmlFor="password" className="text-sm font-medium text-gray-700">Contraseña</label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="text-sm font-medium text-gray-700">Contraseña</label>
+            <div className="text-sm">
+              <a href="/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500">¿Olvidaste tu contraseña?</a>
+            </div>
+          </div>
           <input id="password" name="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
         </div>
         <div>
