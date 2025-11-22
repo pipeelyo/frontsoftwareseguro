@@ -1,9 +1,9 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { PrismaClient, TokenType } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
-
-const prisma = new PrismaClient();
+import dbConnect from '@/lib/db';
+import User from '@/models/User';
+import VerificationToken from '@/models/VerificationToken';
 
 // Password policy: minimum 8 characters, one uppercase, one lowercase, one number, one special character
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -24,9 +24,9 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+    await dbConnect();
+
+    const existingUser = await User.findOne({ email });
 
     if (existingUser) {
       return NextResponse.json({ error: 'El correo electrónico ya está en uso.' }, { status: 409 });
@@ -35,30 +35,27 @@ export async function POST(req: NextRequest) {
     // 3. Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 4. Create the new user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-      },
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword,
     });
+    await user.save();
 
     // 5. Generate verification token
-    const token = uuidv4();
-    const expires = new Date(new Date().getTime() + 3600 * 1000); // 1 hour
+    const verificationTokenValue = uuidv4();
+    const expires = new Date(new Date().getTime() + 24 * 60 * 60 * 1000); // 24 hours
 
-    await prisma.verificationToken.create({
-      data: {
-        token,
-        expires,
-        type: TokenType.EMAIL_VERIFICATION,
-        userId: user.id,
-      },
+    const verificationToken = new VerificationToken({
+      token: verificationTokenValue,
+      expires,
+      type: 'EMAIL_VERIFICATION',
+      userId: user._id,
     });
+    await verificationToken.save();
 
     // Simulate sending email by logging to console
-    const verificationLink = `http://localhost:3000/api/auth/verify?token=${token}`;
+    const verificationLink = `http://localhost:3000/api/auth/verify?token=${verificationTokenValue}`;
     console.log(`Verification link for ${email}: ${verificationLink}`);
 
     return NextResponse.json({ message: 'Usuario registrado con éxito.' }, { status: 201 });

@@ -1,16 +1,15 @@
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import { NextResponse, NextRequest } from 'next/server';
 import jwt from 'jsonwebtoken';
-
-const prisma = new PrismaClient();
+import bcrypt from 'bcrypt';
+import dbConnect from '@/lib/db';
+import User from '@/models/User';
 
 // IMPORTANT: Store this in an environment variable (.env) in a real application
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-that-is-long-and-random';
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_TIME_MINUTES = 15;
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
 
@@ -19,7 +18,9 @@ export async function POST(req: Request) {
     }
 
     // 1. Find user by email
-    const user = await prisma.user.findUnique({ where: { email } });
+    await dbConnect();
+
+    const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
       return NextResponse.json({ error: 'Credenciales inválidas.' }, { status: 401 });
@@ -36,29 +37,30 @@ export async function POST(req: Request) {
 
     if (!isPasswordValid) {
       // Increment failed login attempts
-      const newAttempts = user.failedLoginAttempts + 1;
-      let updateData: any = { failedLoginAttempts: newAttempts };
+      user.failedLoginAttempts += 1;
 
-      if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
+      if (user.failedLoginAttempts >= MAX_LOGIN_ATTEMPTS) {
         // Lock the account
         const lockoutUntil = new Date(new Date().getTime() + LOCKOUT_TIME_MINUTES * 60 * 1000);
-        updateData.lockoutUntil = lockoutUntil;
-        updateData.failedLoginAttempts = 0; // Reset attempts after locking
+        user.lockoutUntil = lockoutUntil;
+        user.failedLoginAttempts = 0; // Reset attempts after locking
       }
 
-      await prisma.user.update({ where: { id: user.id }, data: updateData });
+      await user.save();
 
       return NextResponse.json({ error: 'Credenciales inválidas.' }, { status: 401 });
     }
 
     // 4. Reset failed attempts on successful login
     if (user.failedLoginAttempts > 0) {
-      await prisma.user.update({ where: { id: user.id }, data: { failedLoginAttempts: 0, lockoutUntil: null } });
+      user.failedLoginAttempts = 0;
+      user.lockoutUntil = null;
+      await user.save();
     }
 
     // 5. Generate JWT
     const token = jwt.sign(
-      { userId: user.id, email: user.email, tokenVersion: user.tokenVersion },
+      { userId: user._id, email: user.email, tokenVersion: user.tokenVersion },
       JWT_SECRET,
       { expiresIn: '60m' } // Token expires in 60 minutes
     );

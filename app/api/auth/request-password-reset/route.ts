@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient, TokenType } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcrypt';
-
-const prisma = new PrismaClient();
+import dbConnect from '@/lib/db';
+import User from '@/models/User';
+import VerificationToken from '@/models/VerificationToken';
 
 // In-memory store for rate limiting (in a real app, use Redis or a similar persistent store)
 const rateLimitStore: Record<string, { count: number; expiry: number }> = {};
@@ -29,7 +29,8 @@ export async function POST(req: Request) {
     const { email } = await req.json();
     const genericResponse = NextResponse.json({ message: 'Si tu cuenta existe, recibirás un correo con instrucciones para restablecer tu contraseña.' });
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    await dbConnect();
+    const user = await User.findOne({ email });
 
     // Always return a generic response to prevent user enumeration
     if (!user) {
@@ -41,14 +42,13 @@ export async function POST(req: Request) {
     const hashedToken = await bcrypt.hash(token, 10);
     const expires = new Date(new Date().getTime() + 15 * 60 * 1000); // 15 minutes
 
-    await prisma.verificationToken.create({
-      data: {
-        token: hashedToken,
-        expires,
-        type: TokenType.PASSWORD_RESET,
-        userId: user.id,
-      },
+    const verificationToken = new VerificationToken({
+      token: hashedToken,
+      expires,
+      type: 'PASSWORD_RESET',
+      userId: user._id,
     });
+    await verificationToken.save();
 
     // Simulate sending email with the *unhashed* token
     const resetLink = `http://localhost:3000/reset-password/${token}`;

@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import dbConnect from '@/lib/db';
+import User from '@/models/User';
 import type { NextRequest } from 'next/server';
-
-const prisma = new PrismaClient();
 
 export async function GET(req: NextRequest) {
   const userId = req.headers.get('x-user-id');
@@ -12,13 +11,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        name: true,
-        email: true,
-      },
-    });
+    await dbConnect();
+    const user = await User.findById(userId).select('name email emailVerified');
 
     if (!user) {
       return NextResponse.json({ error: 'Usuario no encontrado.' }, { status: 404 });

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient, TokenType } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import dbConnect from '@/lib/db';
+import User from '@/models/User';
+import VerificationToken from '@/models/VerificationToken';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -12,20 +12,23 @@ export async function GET(req: Request) {
   }
 
   try {
-    const verificationToken = await prisma.verificationToken.findFirst({
-      where: { token, type: TokenType.EMAIL_VERIFICATION },
+    await dbConnect();
+
+    const verificationToken = await VerificationToken.findOne({
+      token,
+      type: 'EMAIL_VERIFICATION',
     });
 
     if (!verificationToken || new Date() > new Date(verificationToken.expires)) {
       return NextResponse.json({ error: 'Token inválido o expirado.' }, { status: 400 });
     }
 
-    await prisma.user.update({
-      where: { id: verificationToken.userId },
-      data: { emailVerified: new Date() },
-    });
+    await User.updateOne(
+      { _id: verificationToken.userId },
+      { emailVerified: new Date() }
+    );
 
-    await prisma.verificationToken.delete({ where: { id: verificationToken.id } });
+    await VerificationToken.deleteOne({ _id: verificationToken._id });
 
     // You can redirect to a login page with a success message
     const url = new URL('/', req.url);

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient, TokenType } from '@prisma/client';
 import bcrypt from 'bcrypt';
-
-const prisma = new PrismaClient();
+import dbConnect from '@/lib/db';
+import User from '@/models/User';
+import VerificationToken from '@/models/VerificationToken';
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
 export async function POST(req: Request) {
@@ -19,13 +19,12 @@ export async function POST(req: Request) {
     // This requires a different strategy.
 
     // Let's find all non-expired password reset tokens.
-    const potentialTokens = await prisma.verificationToken.findMany({
-      where: {
-        type: TokenType.PASSWORD_RESET,
-        expires: { gt: new Date() },
-      },
-      include: { user: true },
-    });
+    await dbConnect();
+
+    const potentialTokens = await VerificationToken.find({
+      type: 'PASSWORD_RESET',
+      expires: { $gt: new Date() },
+    }).populate('userId');
 
     let validToken = null;
     for (const t of potentialTokens) {
@@ -49,24 +48,24 @@ export async function POST(req: Request) {
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
     // 4. Update password and invalidate all sessions
-    await prisma.user.update({
-      where: { id: validToken.userId },
-      data: {
-        password: hashedNewPassword,
-        tokenVersion: { increment: 1 },
-      },
-    });
+    await User.updateOne(
+      { _id: validToken.userId },
+      {
+        $set: { password: hashedNewPassword },
+        $inc: { tokenVersion: 1 },
+      }
+    );
 
     // 5. Invalidate all password reset tokens for this user
-    await prisma.verificationToken.deleteMany({
-      where: {
-        userId: validToken.userId,
-        type: TokenType.PASSWORD_RESET,
-      },
+    await VerificationToken.deleteMany({
+      userId: validToken.userId,
+      type: 'PASSWORD_RESET',
     });
 
     // 6. Simulate email notification
-    console.log(`Password has been reset for ${validToken.user.email}`);
+    // The populated user object is now on validToken.userId
+    const user = validToken.userId as any;
+    console.log(`Password has been reset for ${user.email}`);
 
     return NextResponse.json({ message: 'Contraseña restablecida con éxito. Serás redirigido para iniciar sesión.' });
 

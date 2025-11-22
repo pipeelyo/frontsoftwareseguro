@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient, TokenType } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import dbConnect from '@/lib/db';
+import User from '@/models/User';
+import VerificationToken from '@/models/VerificationToken';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -12,8 +12,11 @@ export async function GET(req: Request) {
   }
 
   try {
-    const verificationToken = await prisma.verificationToken.findUnique({
-      where: { token, type: TokenType.EMAIL_CHANGE },
+    await dbConnect();
+
+    const verificationToken = await VerificationToken.findOne({
+      token,
+      type: 'EMAIL_CHANGE',
     });
 
     if (!verificationToken || new Date() > new Date(verificationToken.expires) || !verificationToken.newEmail) {
@@ -21,22 +24,21 @@ export async function GET(req: Request) {
     }
 
     // Check if the new email is already in use by another user
-    const existingUser = await prisma.user.findUnique({ where: { email: verificationToken.newEmail } });
+    const existingUser = await User.findOne({ email: verificationToken.newEmail! });
     if (existingUser) {
       return NextResponse.json({ error: 'El correo electrónico ya está en uso.' }, { status: 409 });
     }
 
     // Update the user's email
-    await prisma.user.update({
-      where: { id: verificationToken.userId },
-      data: { 
+    await User.updateOne(
+      { _id: verificationToken.userId },
+      {
         email: verificationToken.newEmail,
         emailVerified: new Date(),
-      },
-    });
+      }
+    );
 
-    // Delete the token after use
-    await prisma.verificationToken.delete({ where: { id: verificationToken.id } });
+    await VerificationToken.deleteOne({ _id: verificationToken._id });
 
     // Redirect to a success page or login
     const url = new URL('/', req.url);

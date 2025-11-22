@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import * as jose from 'jose';
-import { PrismaClient } from '@prisma/client';
+import dbConnect from './lib/db';
+import User from './models/User';
 
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-that-is-long-and-random';
 
 interface JwtPayload {
@@ -31,9 +31,8 @@ export async function middleware(req: NextRequest) {
     );
 
     // Check if the user and token version are valid
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-    });
+    await dbConnect();
+    const user = await User.findById(payload.userId as string);
 
     if (!user || user.tokenVersion !== payload.tokenVersion) {
       // If user not found or token version mismatch, session is invalid

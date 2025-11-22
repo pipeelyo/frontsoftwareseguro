@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
-
-const prisma = new PrismaClient();
+import dbConnect from '@/lib/db';
+import User from '@/models/User';
 
 // Password policy from registration
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -21,7 +20,8 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Todos los campos son obligatorios.' }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    await dbConnect();
+    const user = await User.findById(userId).select('+password');
     if (!user) {
       return NextResponse.json({ error: 'Usuario no encontrado.' }, { status: 404 });
     }
@@ -41,13 +41,9 @@ export async function PUT(req: NextRequest) {
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
     // 4. Update password and invalidate old sessions by incrementing tokenVersion
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        password: hashedNewPassword,
-        tokenVersion: { increment: 1 },
-      },
-    });
+    user.password = hashedNewPassword;
+    user.tokenVersion += 1;
+    await user.save();
 
     // 5. Simulate email notification
     console.log(`Password changed notification sent to ${user.email}`);
