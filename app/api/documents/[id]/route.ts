@@ -4,7 +4,7 @@ import dbConnect from '@/lib/db';
 import Document from '@/models/Document';
 import { logAuditEvent } from '@/lib/audit';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, context: { params: { id: string } }) {
   const userId = req.headers.get('x-user-id');
   const userRole = req.headers.get('x-user-role');
 
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   try {
     await dbConnect();
 
-    const document = await Document.findById(params.id);
+    const document = await Document.findById(context.params.id);
 
     if (!document) {
       return NextResponse.json({ error: 'Documento no encontrado.' }, { status: 404 });
