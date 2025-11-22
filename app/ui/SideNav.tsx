@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
-import { Home, Shield, FileText, Users, BarChart, LogOut } from 'lucide-react';
+import { Home, Shield, FileText, Users, BarChart, LogOut, UserCircle } from 'lucide-react';
 
 interface JwtPayload {
   role: string;
@@ -67,6 +67,13 @@ export default async function SideNav() {
       </Link>
       <div className="flex grow flex-row justify-between space-x-2 md:flex-col md:space-x-0 md:space-y-2">
         <div className="flex flex-col w-full">
+          <Link
+            href="/profile"
+            className="flex h-[48px] grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium text-black hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3"
+          >
+            <UserCircle className="w-6" />
+            <p className="hidden md:block">Perfil</p>
+          </Link>
           {links.map((link) => {
             const LinkIcon = link.icon;
             return (

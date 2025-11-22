@@ -4,7 +4,7 @@ import User from '@/models/User';
 import type { NextRequest } from 'next/server';
 
 export async function GET(req: NextRequest) {
-  const userId = req.headers.get('x-user-id');
+  const userId = req.cookies.get('x-user-id')?.value;
 
   if (!userId) {
     return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });

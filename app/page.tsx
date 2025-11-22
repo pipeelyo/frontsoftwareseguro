@@ -29,7 +29,24 @@ async function getUserFromToken() {
 export default async function Home() {
   const user = await getUserFromToken();
 
+  // If the user is logged in, the SideNav is already visible from the layout.
+  // We just show a welcome message in the main content area.
+  if (user) {
+    return (
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-gray-900">¡Bienvenido, {user.name}!</h1>
+        <p className="mt-2 text-gray-600">Usa el menú de la izquierda para navegar.</p>
+      </div>
+    );
+  }
+
+  // If the user is not logged in, the SideNav is hidden.
+  // We show the centered login form.
   return (
-    <LoginClient initialUser={user} />
+    <div className="flex items-center justify-center h-full">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
+        <LoginClient initialUser={null} />
+      </div>
+    </div>
   );
 }

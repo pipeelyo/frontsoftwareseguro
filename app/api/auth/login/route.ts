@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     // 5. Generate JWT
     console.log(`[Login API] Generating token for user: ${user._id}`);
     const token = jwt.sign(
-      { userId: user._id, email: user.email, tokenVersion: user.tokenVersion, role: user.role },
+      { userId: user._id, name: user.name, email: user.email, tokenVersion: user.tokenVersion, role: user.role },
       JWT_SECRET,
       { expiresIn: '60m' } // Token expires in 60 minutes
     );

@@ -33,16 +33,22 @@ export async function middleware(req: NextRequest) {
       new TextEncoder().encode(JWT_SECRET)
     );
 
+    const response = NextResponse.next();
+
+    // Set cookies for client-side access
+    response.cookies.set('x-user-id', payload.userId);
+    response.cookies.set('x-user-role', payload.role);
+
+    // Also set headers for server-side access (good practice)
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set('x-user-id', payload.userId);
     requestHeaders.set('x-user-role', payload.role);
     console.log(`[Middleware] Token verified successfully for user: ${payload.userId}, role: ${payload.role}`);
 
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
+    response.headers.set('x-user-id', payload.userId);
+    response.headers.set('x-user-role', payload.role);
+
+    return response;
 
   } catch (error) {
     console.error('JWT verification failed:', error);

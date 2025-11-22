@@ -6,7 +6,7 @@ import User from '@/models/User';
 import VerificationToken from '@/models/VerificationToken';
 
 export async function PUT(req: NextRequest) {
-  const userId = req.headers.get('x-user-id');
+  const userId = req.cookies.get('x-user-id')?.value;
   if (!userId) {
     return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
   }
