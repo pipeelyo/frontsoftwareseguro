@@ -1,66 +1,74 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import * as jose from 'jose';
-import dbConnect from './lib/db';
-import User from './models/User';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-that-is-long-and-random';
+import { jwtVerify } from 'jose';
 
 interface JwtPayload {
   userId: string;
-  tokenVersion: number;
-  iat: number;
-  exp: number;
+  role: 'VIGILANTE' | 'SUPERVISOR' | 'ADMIN' | 'CLIENTE' | 'ADMINISTRATIVO';
 }
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get('auth_token')?.value;
+  console.log(`[Middleware] Token from cookie: ${token ? 'found' : 'not found'}`);
 
   if (!token) {
-    // If no token, redirect to login page
+    const url = req.nextUrl.clone();
+    url.pathname = '/';
+    return NextResponse.redirect(url);
+  }
+
+  if (!JWT_SECRET) {
+    console.error('JWT_SECRET is not defined in environment variables');
     const url = req.nextUrl.clone();
     url.pathname = '/';
     return NextResponse.redirect(url);
   }
 
   try {
-    // Verify the JWT
-    const { payload } = await jose.jwtVerify<JwtPayload>(
+    console.log('[Middleware] Verifying token...');
+    const { payload } = await jwtVerify<JwtPayload>(
       token,
       new TextEncoder().encode(JWT_SECRET)
     );
 
-    // Check if the user and token version are valid
-    await dbConnect();
-    const user = await User.findById(payload.userId as string);
-
-    if (!user || user.tokenVersion !== payload.tokenVersion) {
-      // If user not found or token version mismatch, session is invalid
-      const url = req.nextUrl.clone();
-      url.pathname = '/';
-      const response = NextResponse.redirect(url);
-      response.cookies.delete('auth_token'); // Clear the invalid cookie
-      return response;
-    }
-
-    // Add user ID to the request headers to be used in API routes
     const requestHeaders = new Headers(req.headers);
-    requestHeaders.set('x-user-id', user.id);
+    requestHeaders.set('x-user-id', payload.userId);
+    requestHeaders.set('x-user-role', payload.role);
+    console.log(`[Middleware] Token verified successfully for user: ${payload.userId}, role: ${payload.role}`);
 
-    // If token is valid, proceed to the requested page
-    return NextResponse.next({ request: { headers: requestHeaders } });
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
 
   } catch (error) {
-    // If token is invalid (expired, malformed, etc.), redirect to login
+    console.error('JWT verification failed:', error);
     const url = req.nextUrl.clone();
     url.pathname = '/';
     const response = NextResponse.redirect(url);
-    response.cookies.delete('auth_token'); // Clear the invalid cookie
+    response.cookies.delete('auth_token');
     return response;
   }
 }
 
-// Specify which paths the middleware should apply to
+export const runtime = 'nodejs';
+
 export const config = {
-  matcher: ['/profile/:path*', '/api/profile/:path*'],
+  matcher: [
+    // UI Routes
+    '/profile',
+    '/dashboard',
+    '/client-portal',
+    '/documents',
+
+    // API Routes
+    '/api/shifts/:path*',
+    '/api/incidents/:path*',
+    '/api/documents/:path*',
+    '/api/reports/:path*',
+    '/api/audit/:path*',
+  ],
 };

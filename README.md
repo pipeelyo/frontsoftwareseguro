@@ -69,6 +69,16 @@ npm run dev
 
 Abre [http://localhost:3000](http://localhost:3000) en tu navegador para ver la aplicación.
 
+### 6. (Alternativa) Iniciar con Docker Compose
+
+Si tienes Docker instalado, puedes levantar el entorno de desarrollo de forma contenerizada. Esto asegura que todos los desarrolladores usen el mismo entorno.
+
+```bash
+docker-compose up --build
+```
+
+La aplicación estará disponible en [http://localhost:3000](http://localhost:3000) y se recargará automáticamente si haces cambios en el código.
+
 ---
 
 ## Arquitectura y Despliegue en Vercel
@@ -122,7 +132,7 @@ npm run assign-role -- admin@empresa.com ADMINISTRATIVO
 | ---------------------- | :-------: | :--------: | :-----: | :------------: | :---: |
 | **`/` (Login)**       |     ✅    |     ✅     |    ✅   |       ✅       |   ✅  |
 | **`/dashboard`**       |     ✅    |     ✅     |    ❌   |       ❌       |   ✅  |
-| **`/client-portal`**   |     ❌    |     ❌     |    ✅   |       ❌       |   ❌  |
+| **`/client-portal`**   |     ❌    |     ❌     |    ✅   |       ❌       |   ✅  |
 | **`/documents`**       |     ❌    |     ❌     |    ❌   |       ✅       |   ✅  |
 | **Panel de Admin**     |     ❌    |     ❌     |    ❌   |       ❌       |   ✅  |
 

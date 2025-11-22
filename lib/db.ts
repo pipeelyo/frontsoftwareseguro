@@ -1,32 +1,59 @@
 import mongoose from 'mongoose';
 
+// This approach is taken from https://github.com/vercel/next.js/tree/canary/examples/with-mongodb-mongoose
+
+// Extend the NodeJS global type to include our Mongoose connection cache
+declare global {
+  var _mongooseCache: {
+    promise: ReturnType<typeof mongoose.connect> | null;
+    conn: typeof mongoose | null;
+  };
+}
+
+const MONGO_URI = process.env.MONGO_URI;
+
+if (!MONGO_URI) {
+  throw new Error(
+    'Please define the MONGO_URI environment variable inside .env.local'
+  );
+}
 
 /**
  * Global is used here to maintain a cached connection across hot reloads
- * in development. This prevents connections growing exponentially
+ * in development. This prevents connections from growing exponentially
  * during API Route usage.
  */
-let cachedConnection: typeof mongoose | null = null;
+let cached = global._mongooseCache;
+
+if (!cached) {
+  cached = global._mongooseCache = { conn: null, promise: null };
+}
 
 async function dbConnect() {
-  const MONGO_URI = process.env.MONGO_URI;
-  if (!MONGO_URI) {
-    throw new Error('Please define the MONGO_URI environment variable');
+  if (cached.conn) {
+    return cached.conn;
   }
 
-  if (cachedConnection) {
-    return cachedConnection;
-  }
-
-  try {
+  if (!cached.promise) {
     const opts = {
       bufferCommands: false,
     };
-    cachedConnection = await mongoose.connect(MONGO_URI!, opts);
-    return cachedConnection;
+
+    cached.promise = mongoose.connect(MONGO_URI!, opts).then((mongoose) => {
+      return mongoose;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
   } catch (e) {
+    cached.promise = null;
     throw e;
   }
+
+  return cached.conn;
 }
+
+
 
 export default dbConnect;

@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import VerificationToken from '@/models/VerificationToken';
+import { logAuditEvent } from '@/lib/audit';
 
 // Password policy: minimum 8 characters, one uppercase, one lowercase, one number, one special character
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -41,6 +42,8 @@ export async function POST(req: NextRequest) {
       password: hashedPassword,
     });
     await user.save();
+
+    logAuditEvent({ userId: user._id, action: 'USER_REGISTER', ipAddress: req.headers.get('x-forwarded-for') ?? 'unknown' });
 
     // 5. Generate verification token
     const verificationTokenValue = uuidv4();
