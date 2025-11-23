@@ -13,15 +13,16 @@ async function getUser() {
   const token = cookieStore.get('auth_token')?.value;
   const secret = process.env.JWT_SECRET;
 
-  if (token && secret) {
-    try {
-      const { payload } = await jwtVerify<JwtPayload>(token, new TextEncoder().encode(secret));
-      return payload;
-    } catch (e) {
-      return null;
-    }
+  if (!token || !secret) {
+    return null;
   }
-  return null;
+
+  try {
+    const { payload } = await jwtVerify<JwtPayload>(token, new TextEncoder().encode(secret));
+    return payload;
+  } catch (e) {
+    return null;
+  }
 }
 
 const navLinks = {
@@ -51,7 +52,7 @@ export default async function SideNav() {
   const user = await getUser();
 
   if (!user) {
-    return null; // Don't render the nav if not logged in
+    return null; // No renderizar el menú si no hay usuario
   }
 
   const links = navLinks[user.role as keyof typeof navLinks] || [];
