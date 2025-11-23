@@ -41,20 +41,18 @@ export async function POST(req: NextRequest) {
   try {
     await dbConnect();
 
-    // Find the active shift for the user
-    const activeShift = await Shift.findOne({ userId, status: 'ACTIVE' });
-    if (!activeShift) {
-      return NextResponse.json({ error: 'No tienes un turno activo para registrar una novedad.' }, { status: 400 });
-    }
+    const { description, location, shiftId } = await req.json();
 
-    const { description, location } = await req.json();
+    if (!shiftId) {
+      return NextResponse.json({ error: 'El ID del turno es obligatorio.' }, { status: 400 });
+    }
 
     if (!description) {
       return NextResponse.json({ error: 'La descripción es obligatoria.' }, { status: 400 });
     }
 
     const newIncident = new Incident({
-      shiftId: activeShift._id,
+      shiftId,
       userId,
       description,
       location,
@@ -66,7 +64,7 @@ export async function POST(req: NextRequest) {
     logAuditEvent({
       userId,
       action: 'INCIDENT_REPORT',
-      details: { shiftId: activeShift._id, incidentId: newIncident._id, description },
+      details: { shiftId, incidentId: newIncident._id, description },
       ipAddress: req.headers.get('x-forwarded-for') ?? 'unknown',
     });
 

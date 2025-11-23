@@ -58,7 +58,8 @@ export async function POST(req: NextRequest) {
     await verificationToken.save();
 
     // Simulate sending email by logging to console
-    const verificationLink = `http://localhost:3000/api/auth/verify?token=${verificationTokenValue}`;
+    const appUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : process.env.APP_URL;
+    const verificationLink = `${appUrl}/api/auth/verify?token=${verificationTokenValue}`;
     console.log(`Verification link for ${email}: ${verificationLink}`);
 
     return NextResponse.json({ message: 'Usuario registrado con éxito.' }, { status: 201 });

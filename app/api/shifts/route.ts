@@ -6,18 +6,24 @@ import User from '@/models/User'; // Ensure User model is registered
 import { UserRole } from '@/models/User';
 
 export async function GET(req: NextRequest) {
-  const userId = req.headers.get('x-user-id');
-  const userRole = req.headers.get('x-user-role');
+  const userId = req.cookies.get('x-user-id')?.value;
+  const userRole = req.cookies.get('x-user-role')?.value;
 
-  if (!userId || (userRole !== 'SUPERVISOR' && userRole !== 'ADMIN')) {
-    return NextResponse.json({ error: 'No autorizado.' }, { status: 403 });
+  if (!userId) {
+    return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
   }
 
   try {
     await dbConnect();
 
-    // Supervisors can see all shifts, populated with user info
-    const shifts = await Shift.find({}).populate('userId', 'name email');
+    let shifts;
+    if (userRole === 'ADMIN' || userRole === 'SUPERVISOR') {
+      // Admins and Supervisors can see all shifts, populated with user info
+      shifts = await Shift.find({}).populate('userId', 'name email').sort({ startTime: -1 });
+    } else {
+      // Other users can only see their own shifts
+      shifts = await Shift.find({ userId }).sort({ startTime: -1 });
+    }
 
     return NextResponse.json(shifts);
 

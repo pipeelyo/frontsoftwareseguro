@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import EditIncidentModal from './EditIncidentModal';
 import { jwtDecode } from 'jwt-decode';
 
 // Define types for decoded token and user roles
@@ -16,7 +17,8 @@ const IncidentForm = ({ shiftId }: { shiftId: string }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const location = { lat: 0, lon: 0 };
-    const response = await fetch('/api/incidents', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description, location }) });
+    const url = `${process.env.NEXT_PUBLIC_APP_URL}/api/incidents`;
+    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description, location, shiftId }) });
     if (response.ok) { alert('Novedad registrada con éxito'); setDescription(''); } else { alert('Error al registrar la novedad'); }
   };
   return (
@@ -28,28 +30,22 @@ const IncidentForm = ({ shiftId }: { shiftId: string }) => {
   );
 };
 
-const VigilanteDashboard = () => {
-  const [activeShift, setActiveShift] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const checkActiveShift = async () => {
-    try {
-      const response = await fetch('/api/shifts/my-active-shift');
-      if (response.ok) { setActiveShift(await response.json()); }
-    } catch (error) { console.error('Error fetching active shift:', error); } finally { setLoading(false); }
-  };
-  useEffect(() => { checkActiveShift(); }, []);
+const VigilanteDashboard = ({ initialActiveShift }: { initialActiveShift: any }) => {
+  const [activeShift, setActiveShift] = useState(initialActiveShift);
+  const [loading, setLoading] = useState(false);
   const handleStartShift = async () => {
     const location = { lat: 0, lon: 0 };
-    const response = await fetch('/api/shifts/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location }) });
+    const url = `${process.env.NEXT_PUBLIC_APP_URL}/api/shifts/start`;
+    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location }) });
     if (response.ok) { setActiveShift(await response.json()); alert('Turno iniciado con éxito'); }
   };
   const handleEndShift = async () => {
     const location = { lat: 0, lon: 0 };
-    const response = await fetch('/api/shifts/end', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location }) });
+    const url = `${process.env.NEXT_PUBLIC_APP_URL}/api/shifts/end`;
+    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location }) });
     if (response.ok) { setActiveShift(null); alert('Turno finalizado con éxito'); }
   };
-  if (loading) return <p>Cargando...</p>;
-  return (
+    return (
     <div className="p-4">
       <div className="mt-4">
         {activeShift ? (
@@ -70,23 +66,19 @@ const AdminSection = () => (
   </div>
 );
 
-const SupervisorDashboard = ({ userRole }: { userRole: DecodedToken['role'] }) => {
-  const [shifts, setShifts] = useState([]);
+const SupervisorDashboard = ({ userRole, initialShifts, initialActiveShift }: { userRole: DecodedToken['role'], initialShifts: any[], initialActiveShift: any }) => {
+  const [shifts, setShifts] = useState(initialShifts);
   const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
-  const [incidents, setIncidents] = useState([]);
+  const [incidents, setIncidents] = useState<any[]>([]);
+  const [selectedIncident, setSelectedIncident] = useState<any | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingIncidents, setLoadingIncidents] = useState(false);
-  useEffect(() => {
-    const fetchShifts = async () => {
-      const response = await fetch('/api/shifts');
-      if (response.ok) { setShifts(await response.json()); }
-    };
-    fetchShifts();
-  }, []);
   const handleShiftClick = async (shiftId: string) => {
     setSelectedShiftId(shiftId);
     setLoadingIncidents(true);
     try {
-      const response = await fetch(`/api/incidents?shiftId=${shiftId}`);
+      const url = `${process.env.NEXT_PUBLIC_APP_URL}/api/incidents?shiftId=${shiftId}`;
+      const response = await fetch(url);
       if (response.ok) { setIncidents(await response.json()); }
     } catch (error) { console.error('Error fetching incidents:', error); setIncidents([]); } finally { setLoadingIncidents(false); }
   };
@@ -96,7 +88,7 @@ const SupervisorDashboard = ({ userRole }: { userRole: DecodedToken['role'] }) =
       {userRole === 'ADMIN' && (
         <div className="mt-8 p-4 border-t border-dashed">
           <h2 className="text-xl font-bold text-gray-600">Panel de Acciones de Vigilante</h2>
-          <VigilanteDashboard />
+          <VigilanteDashboard initialActiveShift={initialActiveShift} />
         </div>
       )}
       <div className="mt-4">
@@ -114,7 +106,10 @@ const SupervisorDashboard = ({ userRole }: { userRole: DecodedToken['role'] }) =
             {loadingIncidents ? <p>Cargando novedades...</p> : (
               <ul>
                 {incidents.length > 0 ? incidents.map((incident: any) => (
-                  <li key={incident._id} className="p-2 border-t">{incident.description}</li>
+                  <li key={incident._id} className="p-2 border-t flex justify-between items-center">
+                    <span>{incident.description}</span>
+                    <button onClick={() => { setSelectedIncident(incident); setIsModalOpen(true); }} className="text-indigo-600 hover:text-indigo-900">Editar</button>
+                  </li>
                 )) : <p>No hay novedades para este turno.</p>}
               </ul>
             )}
@@ -122,11 +117,22 @@ const SupervisorDashboard = ({ userRole }: { userRole: DecodedToken['role'] }) =
         )}
       </div>
       {userRole === 'ADMIN' && <AdminSection />}
+      {selectedIncident && (
+        <EditIncidentModal
+          incident={selectedIncident}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={(updatedIncident) => {
+            setIncidents(incidents.map(i => i._id === updatedIncident._id ? updatedIncident : i));
+            setIsModalOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 };
 
-export default function DashboardClient({ token }: { token: string | undefined }) {
+export default function DashboardClient({ token, initialShifts, initialActiveShift }: { token: string | undefined, initialShifts: any[], initialActiveShift: any }) {
   const [userRole, setUserRole] = useState<DecodedToken['role'] | null>(null);
 
   useEffect(() => {
@@ -148,10 +154,11 @@ export default function DashboardClient({ token }: { token: string | undefined }
 
   switch (userRole) {
     case 'VIGILANTE':
-      return <VigilanteDashboard />;
+      return <VigilanteDashboard initialActiveShift={initialActiveShift} />;
     case 'SUPERVISOR':
+       return <SupervisorDashboard userRole={userRole} initialShifts={initialShifts} initialActiveShift={initialActiveShift} />;
     case 'ADMIN':
-      return <SupervisorDashboard userRole={userRole} />;
+      return <SupervisorDashboard userRole={userRole} initialShifts={initialShifts} initialActiveShift={initialActiveShift} />;
     default:
       return <p>Acceso no permitido a este dashboard para el rol '{userRole}'.</p>;
   }

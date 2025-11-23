@@ -128,11 +128,15 @@ npm run assign-role -- admin@empresa.com ADMINISTRATIVO
 
 ### Acceso a Vistas por Rol
 
-| Vista / Página         | VIGILANTE | SUPERVISOR | CLIENTE | ADMINISTRATIVO | ADMIN |
-| ---------------------- | :-------: | :--------: | :-----: | :------------: | :---: |
-| **`/` (Login)**       |     ✅    |     ✅     |    ✅   |       ✅       |   ✅  |
-| **`/dashboard`**       |     ✅    |     ✅     |    ❌   |       ❌       |   ✅  |
-| **`/client-portal`**   |     ❌    |     ❌     |    ✅   |       ❌       |   ✅  |
-| **`/documents`**       |     ❌    |     ❌     |    ❌   |       ✅       |   ✅  |
-| **Panel de Admin**     |     ❌    |     ❌     |    ❌   |       ❌       |   ✅  |
+La visibilidad de las páginas se controla según el rol del usuario. A continuación se detalla el acceso para cada rol:
+
+| Vista / Página                | VIGILANTE | SUPERVISOR | CLIENTE | ADMINISTRATIVO | ADMIN |
+| ----------------------------- | :-------: | :--------: | :-----: | :------------: | :---: |
+| **Página de Inicio (`/`)**    |     ✅    |     ✅     |    ✅   |       ✅       |   ✅  |
+| **Dashboard (`/dashboard`)**    |     ✅    |     ✅     |    ❌   |       ❌       |   ✅  |
+| **Gestionar Turnos (`/admin/shifts`)** |     ❌    |     ❌     |    ❌   |       ❌       |   ✅  |
+| **Documentos (`/documents`)**     |     ❌    |     ❌     |    ❌   |       ✅       |   ✅  |
+| **Portal Cliente (`/client-portal`)** |     ❌    |     ❌     |    ✅   |       ❌       |   ✅  |
+| **Auditoría (`/audit`)**        |     ❌    |     ❌     |    ❌   |       ❌       |   ✅  |
+| **Gobierno de Datos (`/datagovernance`)** |     ❌    |     ❌     |    ❌   |       ❌       |   ✅  |
 

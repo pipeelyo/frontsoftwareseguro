@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
-import { Home, Shield, FileText, Users, BarChart, LogOut, UserCircle } from 'lucide-react';
+import { Home, Shield, FileText, Users, BarChart, LogOut, UserCircle, ClipboardList, Database } from 'lucide-react';
 
 interface JwtPayload {
   role: string;
@@ -27,9 +27,11 @@ async function getUser() {
 const navLinks = {
   ADMIN: [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'Gestionar Turnos', href: '/admin/shifts', icon: ClipboardList },
     { name: 'Documentos', href: '/documents', icon: FileText },
     { name: 'Portal Cliente', href: '/client-portal', icon: Users },
     { name: 'Auditoría', href: '/audit', icon: BarChart },
+    { name: 'Gobierno de Datos', href: '/datagovernance', icon: Database },
   ],
   SUPERVISOR: [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -55,7 +57,7 @@ export default async function SideNav() {
   const links = navLinks[user.role as keyof typeof navLinks] || [];
 
   return (
-    <div className="flex h-full flex-col px-3 py-4 md:px-2 bg-gray-50 border-r">
+    <div className="w-full flex-none md:w-64 flex h-full flex-col px-3 py-4 md:px-2 bg-gray-50 border-r">
       <Link
         className="mb-2 flex h-20 items-end justify-start rounded-md bg-blue-600 p-4 md:h-40"
         href="/"

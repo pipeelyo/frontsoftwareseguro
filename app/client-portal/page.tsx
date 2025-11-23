@@ -1,18 +1,29 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import ReportDetailsModal from './ReportDetailsModal';
 
 interface Report {
   id: string;
   title: string;
   date: string;
   status: string;
+  details?: {
+    turnosCompletados: number;
+    turnosProgramados: number;
+    coberturaHoraria: string;
+    incidentesReportados: number;
+    puntosDeControlVerificados: string;
+    resumen: string;
+  };
 }
 
 export default function ClientPortalPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -46,18 +57,38 @@ export default function ClientPortalPage() {
       <h1 className="text-2xl font-bold">Portal del Cliente</h1>
       <div className="mt-6">
         <h2 className="text-xl">Reportes de Servicio</h2>
-        <ul className="mt-4 space-y-4">
-          {reports.map((report) => (
-            <li key={report.id} className="p-4 border rounded-lg flex justify-between items-center">
-              <div>
-                <h3 className="font-semibold">{report.title}</h3>
-                <p className="text-sm text-gray-500">Fecha: {report.date} - Estado: {report.status}</p>
-              </div>
-              <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded">Descargar Certificado</button>
-            </li>
-          ))}
-        </ul>
+        <div className="bg-white shadow-md rounded-lg overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {reports.map((report) => (
+                <tr key={report.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{report.title}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{report.date}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{report.status}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button onClick={() => { setSelectedReport(report); setIsModalOpen(true); }} className="text-indigo-600 hover:text-indigo-900">Ver Detalles</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+      {selectedReport && (
+        <ReportDetailsModal
+          report={selectedReport}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
