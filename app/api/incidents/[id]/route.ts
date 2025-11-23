@@ -4,7 +4,8 @@ import dbConnect from '@/lib/db';
 import Incident from '@/models/Incident';
 import { logAuditEvent } from '@/lib/audit';
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
   const adminId = req.cookies.get('x-user-id')?.value;
   const adminRole = req.cookies.get('x-user-role')?.value;
 
@@ -21,7 +22,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     await dbConnect();
 
-    const incident = await Incident.findById(params.id);
+    const incident = await Incident.findById(id);
     if (!incident) {
       return NextResponse.json({ error: 'Novedad no encontrada.' }, { status: 404 });
     }

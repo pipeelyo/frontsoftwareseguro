@@ -4,8 +4,8 @@ import dbConnect from '@/lib/db';
 import Document from '@/models/Document';
 import { logAuditEvent } from '@/lib/audit';
 
-export async function GET(req: NextRequest, context: { params: { id: string } }) {
-  const { id } = context.params;
+export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
   const userId = req.headers.get('x-user-id');
   const userRole = req.headers.get('x-user-role');
 
