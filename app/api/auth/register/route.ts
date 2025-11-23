@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     await verificationToken.save();
 
     // Simulate sending email by logging to console
-    const appUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : process.env.APP_URL;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const verificationLink = `${appUrl}/api/auth/verify?token=${verificationTokenValue}`;
     console.log(`Verification link for ${email}: ${verificationLink}`);
 

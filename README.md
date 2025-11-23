@@ -126,6 +126,18 @@ npm run assign-role -- admin@empresa.com ADMINISTRATIVO
 
 > **Importante:** Los `--` después de `assign-role` son necesarios.
 
+### Usuarios de Prueba
+
+Para facilitar las pruebas del sistema, se han creado los siguientes usuarios con sus respectivos roles:
+
+| Email | Rol | Contraseña |
+|-------|-----|------------|
+| vigilante@segurcontrol.com | VIGILANTE | Password123! |
+| supervisor@segurcontrol.com | SUPERVISOR | Password123! |
+| admin@segurcontrol.com | ADMIN | Password123! |
+| cliente@segurcontrol.com | CLIENTE | Password123! |
+| administrativo@segurcontrol.com | ADMINISTRATIVO | Password123! |
+
 ### Acceso a Vistas por Rol
 
 La visibilidad de las páginas se controla según el rol del usuario. A continuación se detalla el acceso para cada rol:
