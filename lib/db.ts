@@ -24,13 +24,10 @@ if (!cached) {
 
 async function dbConnect() {
   const MONGO_URI = process.env.MONGO_URI;
-  if (!MONGO_URI) {
-    // During build, MONGO_URI might be undefined. Return null to avoid crashing.
-    if (process.env.NODE_ENV === 'production') {
-      console.warn('MONGO_URI is not defined. Database connection will not be established.');
-      return null;
-    }
-    throw new Error('Please define the MONGO_URI environment variable inside .env.local');
+  if (!MONGO_URI || MONGO_URI.trim() === '' || (!MONGO_URI.startsWith('mongodb://') && !MONGO_URI.startsWith('mongodb+srv://'))) {
+    // During build or if MONGO_URI is invalid, skip database connection
+    console.warn('MONGO_URI is not defined, empty, or invalid. Database connection will not be established.');
+    return null;
   }
 
   if (cached.conn) {
