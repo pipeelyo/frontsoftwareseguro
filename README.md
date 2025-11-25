@@ -2,6 +2,16 @@
 
 Este proyecto es una aplicación web completa construida con Next.js que implementa un sistema de gestión de seguridad con múltiples roles, incluyendo registro de turnos para vigilantes, supervisión, un portal para clientes y gestión de documentos.
 
+## 🚀 Aplicación Desplegada
+
+La aplicación está desplegada en **Vercel** y disponible en:
+
+**[https://frontsoftwareseguro.vercel.app/](https://frontsoftwareseguro.vercel.app/)**
+
+Puedes acceder a la aplicación usando los [usuarios de prueba](#usuarios-de-prueba) detallados más adelante en este documento.
+
+---
+
 ## Tecnologías Utilizadas
 
 -   **Framework:** [Next.js](https://nextjs.org/) (con App Router)
