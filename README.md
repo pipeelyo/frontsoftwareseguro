@@ -142,11 +142,11 @@ Para facilitar las pruebas del sistema, se han creado los siguientes usuarios co
 
 | Email | Rol | Contraseña |
 |-------|-----|------------|
-| vigilante@segurcontrol.com | VIGILANTE | Password123! |
-| supervisor@segurcontrol.com | SUPERVISOR | Password123! |
-| admin@segurcontrol.com | ADMIN | Password123! |
-| cliente@segurcontrol.com | CLIENTE | Password123! |
-| administrativo@segurcontrol.com | ADMINISTRATIVO | Password123! |
+| vigilante@segurcontrol.com | VIGILANTE | Pruebas123! |
+| supervisor@segurcontrol.com | SUPERVISOR | Pruebas123! |
+| admin@segurcontrol.com | ADMIN | Pruebas123! |
+| cliente@segurcontrol.com | CLIENTE | Pruebas123! |
+| administrativo@segurcontrol.com | ADMINISTRATIVO | Pruebas123! |
 
 ### Acceso a Vistas por Rol
 

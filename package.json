@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "jest",
     "assign-role": "node -r dotenv/config -r ts-node/register scripts/assign-role.ts",
-    "verify-user": "node -r dotenv/config -r ts-node/register scripts/verify-user.ts"
+    "verify-user": "node -r dotenv/config -r ts-node/register scripts/verify-user.ts",
+    "change-password": "node -r dotenv/config -r ts-node/register scripts/change-password.ts",
+    "close-shifts": "node -r dotenv/config -r ts-node/register scripts/close-active-shifts.ts"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
