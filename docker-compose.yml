@@ -11,6 +11,10 @@ services:
       - .:/app
       # Exclude node_modules from being overwritten by the volume mount
       - /app/node_modules
+      # Exclude .next to avoid Turbopack issues
+      - /app/.next
+    environment:
+      - TURBOPACK=0
     env_file:
       - .env
     command: npm run dev
